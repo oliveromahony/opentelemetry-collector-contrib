@@ -11,6 +11,32 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 )
 
+// AttributeResponses specifies the a value responses attribute.
+type AttributeResponses int
+
+const (
+	_ AttributeResponses = iota
+	AttributeResponsesFailed
+	AttributeResponsesBuffered
+)
+
+// String returns the string representation of the AttributeResponses.
+func (av AttributeResponses) String() string {
+	switch av {
+	case AttributeResponsesFailed:
+		return "failed"
+	case AttributeResponsesBuffered:
+		return "buffered"
+	}
+	return ""
+}
+
+// MapAttributeResponses is a helper map of string to AttributeResponses attribute value.
+var MapAttributeResponses = map[string]AttributeResponses{
+	"failed":   AttributeResponsesFailed,
+	"buffered": AttributeResponsesBuffered,
+}
+
 // AttributeState specifies the a value state attribute.
 type AttributeState int
 
@@ -251,6 +277,59 @@ func newMetricNginxRequests(cfg MetricConfig) metricNginxRequests {
 	return m
 }
 
+type metricNginxUpstreamsResponse struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills nginx.upstreams_response metric with initial data.
+func (m *metricNginxUpstreamsResponse) init() {
+	m.data.SetName("nginx.upstreams_response")
+	m.data.SetDescription("The total number of HTTP requests from upstream responses")
+	m.data.SetUnit("upstreams")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricNginxUpstreamsResponse) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, responsesAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("responses", responsesAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricNginxUpstreamsResponse) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricNginxUpstreamsResponse) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricNginxUpstreamsResponse(cfg MetricConfig) metricNginxUpstreamsResponse {
+	m := metricNginxUpstreamsResponse{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 // MetricsBuilder provides an interface for scrapers to report metrics while taking care of all the transformations
 // required to produce metric representation defined in metadata and user config.
 type MetricsBuilder struct {
@@ -263,6 +342,7 @@ type MetricsBuilder struct {
 	metricNginxConnectionsCurrent  metricNginxConnectionsCurrent
 	metricNginxConnectionsHandled  metricNginxConnectionsHandled
 	metricNginxRequests            metricNginxRequests
+	metricNginxUpstreamsResponse   metricNginxUpstreamsResponse
 }
 
 // metricBuilderOption applies changes to default metrics builder.
@@ -285,6 +365,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.CreateSetting
 		metricNginxConnectionsCurrent:  newMetricNginxConnectionsCurrent(mbc.Metrics.NginxConnectionsCurrent),
 		metricNginxConnectionsHandled:  newMetricNginxConnectionsHandled(mbc.Metrics.NginxConnectionsHandled),
 		metricNginxRequests:            newMetricNginxRequests(mbc.Metrics.NginxRequests),
+		metricNginxUpstreamsResponse:   newMetricNginxUpstreamsResponse(mbc.Metrics.NginxUpstreamsResponse),
 	}
 	for _, op := range options {
 		op(mb)
@@ -345,6 +426,7 @@ func (mb *MetricsBuilder) EmitForResource(rmo ...ResourceMetricsOption) {
 	mb.metricNginxConnectionsCurrent.emit(ils.Metrics())
 	mb.metricNginxConnectionsHandled.emit(ils.Metrics())
 	mb.metricNginxRequests.emit(ils.Metrics())
+	mb.metricNginxUpstreamsResponse.emit(ils.Metrics())
 
 	for _, op := range rmo {
 		op(rm)
@@ -383,6 +465,11 @@ func (mb *MetricsBuilder) RecordNginxConnectionsHandledDataPoint(ts pcommon.Time
 // RecordNginxRequestsDataPoint adds a data point to nginx.requests metric.
 func (mb *MetricsBuilder) RecordNginxRequestsDataPoint(ts pcommon.Timestamp, val int64) {
 	mb.metricNginxRequests.recordDataPoint(mb.startTime, ts, val)
+}
+
+// RecordNginxUpstreamsResponseDataPoint adds a data point to nginx.upstreams_response metric.
+func (mb *MetricsBuilder) RecordNginxUpstreamsResponseDataPoint(ts pcommon.Timestamp, val int64, responsesAttributeValue AttributeResponses) {
+	mb.metricNginxUpstreamsResponse.recordDataPoint(mb.startTime, ts, val, responsesAttributeValue.String())
 }
 
 // Reset resets metrics builder to its initial state. It should be used when external metrics source is restarted,

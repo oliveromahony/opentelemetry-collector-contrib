@@ -49,3 +49,17 @@ Total number of requests made to the server since it started
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
 | requests | Sum | Int | Cumulative | true |
+
+### nginx.upstreams_response
+
+The total number of HTTP requests from upstream responses
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| upstreams | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| responses | The total number of different response types | Str: ``failed``, ``buffered`` |

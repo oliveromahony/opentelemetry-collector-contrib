@@ -22,7 +22,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
 )
 
-func TestScraper(t *testing.T) {
+func TestStubStatusScraper(t *testing.T) {
 	nginxMock := newMockServer(t)
 	defer nginxMock.Close()
 
@@ -30,12 +30,12 @@ func TestScraper(t *testing.T) {
 	cfg.Endpoint = nginxMock.URL + "/status"
 	require.NoError(t, component.ValidateConfig(cfg))
 
-	scraper := newNginxScraper(receivertest.NewNopCreateSettings(), cfg)
+	stubStatusScraper := newNginxStubStatusScraper(receivertest.NewNopCreateSettings(), cfg)
 
-	err := scraper.start(context.Background(), componenttest.NewNopHost())
+	err := stubStatusScraper.start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 
-	actualMetrics, err := scraper.scrape(context.Background())
+	actualMetrics, err := stubStatusScraper.scrape(context.Background())
 	require.NoError(t, err)
 
 	expectedFile := filepath.Join("testdata", "scraper", "expected.yaml")
@@ -49,7 +49,7 @@ func TestScraper(t *testing.T) {
 		pmetrictest.IgnoreMetricsOrder()))
 }
 
-func TestScraperError(t *testing.T) {
+func TestStubStatusScraperError(t *testing.T) {
 	nginxMock := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/status" {
 			rw.WriteHeader(200)
@@ -59,7 +59,7 @@ func TestScraperError(t *testing.T) {
 		rw.WriteHeader(404)
 	}))
 	t.Run("404", func(t *testing.T) {
-		sc := newNginxScraper(receivertest.NewNopCreateSettings(), &Config{
+		sc := newNginxStubStatusScraper(receivertest.NewNopCreateSettings(), &Config{
 			ClientConfig: confighttp.ClientConfig{
 				Endpoint: nginxMock.URL + "/badpath",
 			},
@@ -71,7 +71,7 @@ func TestScraperError(t *testing.T) {
 	})
 
 	t.Run("parse error", func(t *testing.T) {
-		sc := newNginxScraper(receivertest.NewNopCreateSettings(), &Config{
+		sc := newNginxStubStatusScraper(receivertest.NewNopCreateSettings(), &Config{
 			ClientConfig: confighttp.ClientConfig{
 				Endpoint: nginxMock.URL + "/status",
 			},
@@ -85,7 +85,7 @@ func TestScraperError(t *testing.T) {
 }
 
 func TestScraperFailedStart(t *testing.T) {
-	sc := newNginxScraper(receivertest.NewNopCreateSettings(), &Config{
+	sc := newNginxStubStatusScraper(receivertest.NewNopCreateSettings(), &Config{
 		ClientConfig: confighttp.ClientConfig{
 			Endpoint: "localhost:8080",
 			TLSSetting: configtls.ClientConfig{

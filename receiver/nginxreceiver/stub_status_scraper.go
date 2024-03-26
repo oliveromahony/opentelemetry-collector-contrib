@@ -18,7 +18,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver/internal/metadata"
 )
 
-type nginxScraper struct {
+type nginxStubStatusScraper struct {
 	httpClient *http.Client
 	client     *client.NginxClient
 
@@ -27,12 +27,12 @@ type nginxScraper struct {
 	mb       *metadata.MetricsBuilder
 }
 
-func newNginxScraper(
+func newNginxStubStatusScraper(
 	settings receiver.CreateSettings,
 	cfg *Config,
-) *nginxScraper {
+) *nginxStubStatusScraper {
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
-	return &nginxScraper{
+	return &nginxStubStatusScraper{
 		settings: settings.TelemetrySettings,
 		cfg:      cfg,
 		mb:       mb,
@@ -49,7 +49,7 @@ func (r *nginxScraper) start(ctx context.Context, host component.Host) error {
 	return nil
 }
 
-func (r *nginxScraper) scrape(context.Context) (pmetric.Metrics, error) {
+func (r *nginxStubStatusScraper) scrape(context.Context) (pmetric.Metrics, error) {
 	// Init client in scrape method in case there are transient errors in the constructor.
 	if r.client == nil {
 		var err error
@@ -76,3 +76,4 @@ func (r *nginxScraper) scrape(context.Context) (pmetric.Metrics, error) {
 	r.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Waiting, metadata.AttributeStateWaiting)
 	return r.mb.Emit(), nil
 }
+xx

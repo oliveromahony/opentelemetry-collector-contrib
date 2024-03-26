@@ -18,6 +18,12 @@ attributes:
     - reading
     - writing
     - waiting
+  responses:
+    description: The total number of different response types
+    type: string
+    enum:
+    - failed
+    - buffered
 
 metrics:
   nginx.requests:
@@ -56,3 +62,12 @@ metrics:
       monotonic: false
       aggregation_temporality: cumulative
     attributes: [state]
+  nginx.upstreams_response:
+    enabled: true
+    description: The total number of HTTP requests from upstream responses
+    unit: upstreams
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: cumulative
+    attributes: [responses]
