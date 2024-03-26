@@ -42,6 +42,20 @@ The total number of handled connections. Generally, the parameter value is the s
 | ---- | ----------- | ---------- | ----------------------- | --------- |
 | connections | Sum | Int | Cumulative | true |
 
+### nginx.http.status
+
+The count of HTTP response statuses
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
+| ---- | ----------- | ---------- | ----------------------- | --------- |
+| statuses | Sum | Int | Cumulative | true |
+
+#### Attributes
+
+| Name | Description | Values |
+| ---- | ----------- | ------ |
+| status_code | A status code range | Str: ``1xx``, ``2xx``, ``4xx``, ``5xx`` |
+
 ### nginx.requests
 
 Total number of requests made to the server since it started
