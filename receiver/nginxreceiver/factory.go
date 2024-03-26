@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/file"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver/internal/metadata"
 )
 
@@ -34,6 +35,7 @@ func createDefaultConfig() component.Config {
 			Endpoint: "http://localhost:80/status",
 			Timeout:  10 * time.Second,
 		},
+		InputConfig: *file.NewConfig(),
 		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
 	}
 }
@@ -46,14 +48,22 @@ func createMetricsReceiver(
 ) (receiver.Metrics, error) {
 	cfg := rConf.(*Config)
 
-	ns := newNginxScraper(params, cfg)
-	scraper, err := scraperhelper.NewScraper(metadata.Type.String(), ns.scrape, scraperhelper.WithStart(ns.start))
+	ns := newNginxStubStatusScraper(params, cfg)
+	stubStatusScraper, err := scraperhelper.NewScraper(metadata.Type.String(), ns.scrape, scraperhelper.WithStart(ns.start))
+	if err != nil {
+		return nil, err
+	}
+
+	nals := newNginxLogScraper(params, cfg)
+	accessLogScraper, err := scraperhelper.NewScraper(metadata.Type.String(), nals.scrape, scraperhelper.WithStart(nals.start))
 	if err != nil {
 		return nil, err
 	}
 
 	return scraperhelper.NewScraperControllerReceiver(
 		&cfg.ControllerConfig, params, consumer,
-		scraperhelper.AddScraper(scraper),
+		scraperhelper.AddScraper(stubStatusScraper),
+		scraperhelper.AddScraper(accessLogScraper),
+		// scraperhelper.AddScraper(errorLogScraper),
 	)
 }

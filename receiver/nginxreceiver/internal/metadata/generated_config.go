@@ -29,6 +29,7 @@ type MetricsConfig struct {
 	NginxConnectionsCurrent  MetricConfig `mapstructure:"nginx.connections_current"`
 	NginxConnectionsHandled  MetricConfig `mapstructure:"nginx.connections_handled"`
 	NginxRequests            MetricConfig `mapstructure:"nginx.requests"`
+	NginxUpstreamsResponse   MetricConfig `mapstructure:"nginx.upstreams_response"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
@@ -43,6 +44,9 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled: true,
 		},
 		NginxRequests: MetricConfig{
+			Enabled: true,
+		},
+		NginxUpstreamsResponse: MetricConfig{
 			Enabled: true,
 		},
 	}

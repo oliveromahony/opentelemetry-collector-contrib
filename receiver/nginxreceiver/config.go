@@ -7,6 +7,7 @@ import (
 	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/file"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver/internal/metadata"
 )
 
@@ -14,4 +15,5 @@ type Config struct {
 	scraperhelper.ControllerConfig `mapstructure:",squash"`
 	confighttp.ClientConfig        `mapstructure:",squash"`
 	MetricsBuilderConfig           metadata.MetricsBuilderConfig `mapstructure:",squash"`
+	InputConfig        			   file.Config `mapstructure:",squash"`
 }
