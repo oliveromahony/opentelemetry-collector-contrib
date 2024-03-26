@@ -71,6 +71,40 @@ var MapAttributeState = map[string]AttributeState{
 	"waiting": AttributeStateWaiting,
 }
 
+// AttributeStatusCode specifies the a value status_code attribute.
+type AttributeStatusCode int
+
+const (
+	_ AttributeStatusCode = iota
+	AttributeStatusCode1xx
+	AttributeStatusCode2xx
+	AttributeStatusCode4xx
+	AttributeStatusCode5xx
+)
+
+// String returns the string representation of the AttributeStatusCode.
+func (av AttributeStatusCode) String() string {
+	switch av {
+	case AttributeStatusCode1xx:
+		return "1xx"
+	case AttributeStatusCode2xx:
+		return "2xx"
+	case AttributeStatusCode4xx:
+		return "4xx"
+	case AttributeStatusCode5xx:
+		return "5xx"
+	}
+	return ""
+}
+
+// MapAttributeStatusCode is a helper map of string to AttributeStatusCode attribute value.
+var MapAttributeStatusCode = map[string]AttributeStatusCode{
+	"1xx": AttributeStatusCode1xx,
+	"2xx": AttributeStatusCode2xx,
+	"4xx": AttributeStatusCode4xx,
+	"5xx": AttributeStatusCode5xx,
+}
+
 type metricNginxConnectionsAccepted struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -226,6 +260,59 @@ func newMetricNginxConnectionsHandled(cfg MetricConfig) metricNginxConnectionsHa
 	return m
 }
 
+type metricNginxHTTPStatus struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills nginx.http.status metric with initial data.
+func (m *metricNginxHTTPStatus) init() {
+	m.data.SetName("nginx.http.status")
+	m.data.SetDescription("The count of HTTP response statuses")
+	m.data.SetUnit("statuses")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(true)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricNginxHTTPStatus) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, statusCodeAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Sum().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("status_code", statusCodeAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricNginxHTTPStatus) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricNginxHTTPStatus) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricNginxHTTPStatus(cfg MetricConfig) metricNginxHTTPStatus {
+	m := metricNginxHTTPStatus{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
 type metricNginxRequests struct {
 	data     pmetric.Metric // data buffer for generated metric.
 	config   MetricConfig   // metric config provided by user.
@@ -341,6 +428,7 @@ type MetricsBuilder struct {
 	metricNginxConnectionsAccepted metricNginxConnectionsAccepted
 	metricNginxConnectionsCurrent  metricNginxConnectionsCurrent
 	metricNginxConnectionsHandled  metricNginxConnectionsHandled
+	metricNginxHTTPStatus          metricNginxHTTPStatus
 	metricNginxRequests            metricNginxRequests
 	metricNginxUpstreamsResponse   metricNginxUpstreamsResponse
 }
@@ -364,6 +452,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.CreateSetting
 		metricNginxConnectionsAccepted: newMetricNginxConnectionsAccepted(mbc.Metrics.NginxConnectionsAccepted),
 		metricNginxConnectionsCurrent:  newMetricNginxConnectionsCurrent(mbc.Metrics.NginxConnectionsCurrent),
 		metricNginxConnectionsHandled:  newMetricNginxConnectionsHandled(mbc.Metrics.NginxConnectionsHandled),
+		metricNginxHTTPStatus:          newMetricNginxHTTPStatus(mbc.Metrics.NginxHTTPStatus),
 		metricNginxRequests:            newMetricNginxRequests(mbc.Metrics.NginxRequests),
 		metricNginxUpstreamsResponse:   newMetricNginxUpstreamsResponse(mbc.Metrics.NginxUpstreamsResponse),
 	}
@@ -425,6 +514,7 @@ func (mb *MetricsBuilder) EmitForResource(rmo ...ResourceMetricsOption) {
 	mb.metricNginxConnectionsAccepted.emit(ils.Metrics())
 	mb.metricNginxConnectionsCurrent.emit(ils.Metrics())
 	mb.metricNginxConnectionsHandled.emit(ils.Metrics())
+	mb.metricNginxHTTPStatus.emit(ils.Metrics())
 	mb.metricNginxRequests.emit(ils.Metrics())
 	mb.metricNginxUpstreamsResponse.emit(ils.Metrics())
 
@@ -460,6 +550,11 @@ func (mb *MetricsBuilder) RecordNginxConnectionsCurrentDataPoint(ts pcommon.Time
 // RecordNginxConnectionsHandledDataPoint adds a data point to nginx.connections_handled metric.
 func (mb *MetricsBuilder) RecordNginxConnectionsHandledDataPoint(ts pcommon.Timestamp, val int64) {
 	mb.metricNginxConnectionsHandled.recordDataPoint(mb.startTime, ts, val)
+}
+
+// RecordNginxHTTPStatusDataPoint adds a data point to nginx.http.status metric.
+func (mb *MetricsBuilder) RecordNginxHTTPStatusDataPoint(ts pcommon.Timestamp, val int64, statusCodeAttributeValue AttributeStatusCode) {
+	mb.metricNginxHTTPStatus.recordDataPoint(mb.startTime, ts, val, statusCodeAttributeValue.String())
 }
 
 // RecordNginxRequestsDataPoint adds a data point to nginx.requests metric.
