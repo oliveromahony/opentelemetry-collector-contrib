@@ -25,8 +25,11 @@ require (
 
 require (
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
-	github.com/expr-lang/expr v1.16.1 // indirect
-	gonum.org/v1/gonum v0.14.0 // indirect
+	github.com/expr-lang/expr v1.16.2 // indirect
+	github.com/influxdata/go-syslog/v3 v3.0.1-0.20230911200830-875f5bc594a4 // indirect
+	github.com/leodido/ragel-machinery v0.0.0-20181214104525-299bdde78165 // indirect
+	github.com/valyala/fastjson v1.6.4 // indirect
+	gonum.org/v1/gonum v0.15.0 // indirect
 )
 
 require (
@@ -72,7 +75,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.98.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.96.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.97.0
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -95,7 +98,7 @@ require (
 	go.opentelemetry.io/collector/config/configopaque v1.5.1-0.20240416135553-49cc9e05e3a9 // indirect
 	go.opentelemetry.io/collector/config/configtelemetry v0.98.1-0.20240416135553-49cc9e05e3a9 // indirect
 	go.opentelemetry.io/collector/config/internal v0.98.1-0.20240416135553-49cc9e05e3a9 // indirect
-	go.opentelemetry.io/collector/extension v0.98.1-0.20240416135553-49cc9e05e3a9 // indirect
+	go.opentelemetry.io/collector/extension v0.98.1-0.20240416135553-49cc9e05e3a9
 	go.opentelemetry.io/collector/extension/auth v0.98.1-0.20240416135553-49cc9e05e3a9 // indirect
 	go.opentelemetry.io/collector/featuregate v1.5.1-0.20240416135553-49cc9e05e3a9 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.50.0 // indirect
@@ -104,7 +107,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.25.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.25.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20230711023510-fffb14384f22 // indirect
+	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
 	golang.org/x/mod v0.16.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
