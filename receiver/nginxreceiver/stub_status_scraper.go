@@ -76,4 +76,3 @@ func (r *nginxStubStatusScraper) scrape(context.Context) (pmetric.Metrics, error
 	r.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Waiting, metadata.AttributeStateWaiting)
 	return r.mb.Emit(), nil
 }
-xx
