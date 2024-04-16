@@ -1,7 +1,5 @@
 nginx:
   endpoint: "http://localhost:80/status"
   collection_interval: 10s
-  operators:
-    - type: file_input
-      include:
-        - /var/log/nginx/access.log
+  include: "/var/log/nginx/access.log"
+  nginx_conf_path: "/etc/nginx/nginx.conf"

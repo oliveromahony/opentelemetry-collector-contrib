@@ -4,6 +4,8 @@ go 1.21
 
 require (
 	github.com/google/go-cmp v0.6.0
+	github.com/mitchellh/mapstructure v1.5.0
+	github.com/nginxinc/nginx-go-crossplane v0.4.37
 	github.com/nginxinc/nginx-prometheus-exporter v0.11.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.98.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden v0.98.0
@@ -27,7 +29,10 @@ require (
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
 	github.com/expr-lang/expr v1.16.2 // indirect
 	github.com/influxdata/go-syslog/v3 v3.0.1-0.20230911200830-875f5bc594a4 // indirect
+	github.com/jstemmer/go-junit-report v1.0.0 // indirect
 	github.com/leodido/ragel-machinery v0.0.0-20181214104525-299bdde78165 // indirect
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.6.1 // indirect
+	github.com/trivago/tgo v1.0.7 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
 	gonum.org/v1/gonum v0.15.0 // indirect
 )
@@ -91,6 +96,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
+	github.com/trivago/grok v1.0.0
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/collector v0.98.1-0.20240416135553-49cc9e05e3a9 // indirect
 	go.opentelemetry.io/collector/config/configauth v0.98.1-0.20240416135553-49cc9e05e3a9 // indirect

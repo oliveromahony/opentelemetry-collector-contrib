@@ -5,39 +5,25 @@ package nginxreceiver // import "github.com/open-telemetry/opentelemetry-collect
 
 import (
 	"context"
-	"time"
+	"errors"
 
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config/confighttp"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/scraperhelper"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/file"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver/internal/config"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver/internal/scraper/accesslog"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver/internal/scraper/stubstatus"
 )
 
 // NewFactory creates a factory for nginx receiver.
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
 		metadata.Type,
-		createDefaultConfig,
+		config.CreateDefaultConfig,
 		receiver.WithMetrics(createMetricsReceiver, metadata.MetricsStability))
-}
-
-func createDefaultConfig() component.Config {
-	cfg := scraperhelper.NewDefaultControllerConfig()
-	cfg.CollectionInterval = 10 * time.Second
-
-	return &Config{
-		ControllerConfig: cfg,
-		ClientConfig: confighttp.ClientConfig{
-			Endpoint: "http://localhost:80/status",
-			Timeout:  10 * time.Second,
-		},
-		InputConfig:          *file.NewConfig(),
-		MetricsBuilderConfig: metadata.DefaultMetricsBuilderConfig(),
-	}
 }
 
 func createMetricsReceiver(
@@ -46,24 +32,27 @@ func createMetricsReceiver(
 	rConf component.Config,
 	consumer consumer.Metrics,
 ) (receiver.Metrics, error) {
-	cfg := rConf.(*Config)
-
-	ns := newNginxStubStatusScraper(params, cfg)
-	stubStatusScraper, err := scraperhelper.NewScraper(metadata.Type.String(), ns.scrape, scraperhelper.WithStart(ns.start))
-	if err != nil {
-		return nil, err
+	cfg, ok := rConf.(*config.Config)
+	if !ok {
+		return nil, errors.New("cast to metrics receiver config")
 	}
 
-	nals := newNginxLogScraper(params, cfg)
-	accessLogScraper, err := scraperhelper.NewScraper(metadata.Type.String(), nals.scrape, scraperhelper.WithStart(nals.start))
+	logger := params.Logger.Sugar()
+
+	ns := stubstatus.NewScraper(params, cfg)
+	scraperOpts := []scraperhelper.ScraperControllerOption{
+		scraperhelper.AddScraper(ns),
+	}
+
+	nals, err := accesslog.NewScraper(params, cfg)
 	if err != nil {
-		return nil, err
+		logger.Errorf("Failed to initialize NGINX Access Log scraper: %s", err.Error())
+	} else {
+		scraperOpts = append(scraperOpts, scraperhelper.AddScraper(nals))
 	}
 
 	return scraperhelper.NewScraperControllerReceiver(
 		&cfg.ControllerConfig, params, consumer,
-		scraperhelper.AddScraper(stubStatusScraper),
-		scraperhelper.AddScraper(accessLogScraper),
-		// scraperhelper.AddScraper(errorLogScraper),
+		scraperOpts...,
 	)
 }

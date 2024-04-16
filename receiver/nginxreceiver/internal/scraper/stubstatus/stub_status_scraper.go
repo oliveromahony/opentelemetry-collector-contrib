@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package nginxreceiver // import "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver"
+package stubstatus
 
 import (
 	"context"
@@ -13,30 +13,38 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/collector/receiver/scraperhelper"
 	"go.uber.org/zap"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver/internal/config"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver/internal/metadata"
 )
 
-type nginxStubStatusScraper struct {
+type NginxStubStatusScraper struct {
 	httpClient *http.Client
 	client     *client.NginxClient
 
 	settings component.TelemetrySettings
-	cfg      *Config
+	cfg      *config.Config
 	mb       *metadata.MetricsBuilder
 }
 
-func newNginxStubStatusScraper(
+var _ scraperhelper.Scraper = (*NginxStubStatusScraper)(nil)
+
+func NewScraper(
 	settings receiver.CreateSettings,
-	cfg *Config,
-) *nginxStubStatusScraper {
+	cfg *config.Config,
+) *NginxStubStatusScraper {
 	mb := metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings)
-	return &nginxStubStatusScraper{
+	return &NginxStubStatusScraper{
 		settings: settings.TelemetrySettings,
 		cfg:      cfg,
 		mb:       mb,
 	}
+}
+
+func (nls *NginxStubStatusScraper) ID() component.ID {
+	return component.NewID(metadata.Type)
 }
 
 func (r *nginxScraper) start(ctx context.Context, host component.Host) error {
@@ -49,7 +57,11 @@ func (r *nginxScraper) start(ctx context.Context, host component.Host) error {
 	return nil
 }
 
-func (r *nginxStubStatusScraper) scrape(context.Context) (pmetric.Metrics, error) {
+func (r *NginxStubStatusScraper) Shutdown(_ context.Context) error {
+	return nil
+}
+
+func (r *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error) {
 	// Init client in scrape method in case there are transient errors in the constructor.
 	if r.client == nil {
 		var err error
@@ -62,7 +74,7 @@ func (r *nginxStubStatusScraper) scrape(context.Context) (pmetric.Metrics, error
 
 	stats, err := r.client.GetStubStats()
 	if err != nil {
-		r.settings.Logger.Error("Failed to fetch nginx stats", zap.Error(err))
+		r.settings.Logger.Error("fetch nginx stats", zap.Error(err))
 		return pmetric.Metrics{}, err
 	}
 

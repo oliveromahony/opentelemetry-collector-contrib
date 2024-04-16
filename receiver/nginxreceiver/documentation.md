@@ -44,17 +44,17 @@ The total number of handled connections. Generally, the parameter value is the s
 
 ### nginx.http.status
 
-The count of HTTP response statuses
+The count of HTTP responses by response status
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| statuses | Sum | Int | Cumulative | true |
+| statuses | Sum | Int | Delta | true |
 
 #### Attributes
 
 | Name | Description | Values |
 | ---- | ----------- | ------ |
-| status_code | A status code range | Str: ``1xx``, ``2xx``, ``4xx``, ``5xx`` |
+| status_code | A status code range | Str: ``1xx``, ``2xx``, ``3xx``, ``4xx``, ``5xx`` |
 
 ### nginx.requests
 
@@ -70,7 +70,7 @@ The total number of HTTP requests from upstream responses
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic |
 | ---- | ----------- | ---------- | ----------------------- | --------- |
-| upstreams | Sum | Int | Cumulative | true |
+| upstreams | Sum | Int | Delta | true |
 
 #### Attributes
 

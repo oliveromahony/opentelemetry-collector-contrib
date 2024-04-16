@@ -78,6 +78,7 @@ const (
 	_ AttributeStatusCode = iota
 	AttributeStatusCode1xx
 	AttributeStatusCode2xx
+	AttributeStatusCode3xx
 	AttributeStatusCode4xx
 	AttributeStatusCode5xx
 )
@@ -89,6 +90,8 @@ func (av AttributeStatusCode) String() string {
 		return "1xx"
 	case AttributeStatusCode2xx:
 		return "2xx"
+	case AttributeStatusCode3xx:
+		return "3xx"
 	case AttributeStatusCode4xx:
 		return "4xx"
 	case AttributeStatusCode5xx:
@@ -101,6 +104,7 @@ func (av AttributeStatusCode) String() string {
 var MapAttributeStatusCode = map[string]AttributeStatusCode{
 	"1xx": AttributeStatusCode1xx,
 	"2xx": AttributeStatusCode2xx,
+	"3xx": AttributeStatusCode3xx,
 	"4xx": AttributeStatusCode4xx,
 	"5xx": AttributeStatusCode5xx,
 }
@@ -269,11 +273,11 @@ type metricNginxHTTPStatus struct {
 // init fills nginx.http.status metric with initial data.
 func (m *metricNginxHTTPStatus) init() {
 	m.data.SetName("nginx.http.status")
-	m.data.SetDescription("The count of HTTP response statuses")
+	m.data.SetDescription("The count of HTTP responses by response status")
 	m.data.SetUnit("statuses")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
-	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 
@@ -377,7 +381,7 @@ func (m *metricNginxUpstreamsResponse) init() {
 	m.data.SetUnit("upstreams")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(true)
-	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityDelta)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
 }
 

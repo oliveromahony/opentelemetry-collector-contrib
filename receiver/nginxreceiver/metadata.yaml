@@ -30,6 +30,7 @@ attributes:
     enum:
     - 1xx
     - 2xx
+    - 3xx
     - 4xx
     - 5xx
 
@@ -70,15 +71,6 @@ metrics:
       monotonic: false
       aggregation_temporality: cumulative
     attributes: [state]
-  nginx.upstreams_response:
-    enabled: true
-    description: The total number of HTTP requests from upstream responses
-    unit: upstreams
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: cumulative
-    attributes: [responses]
   nginx.http.status:
     enabled: true
     description: The count of HTTP responses by response status
@@ -86,5 +78,14 @@ metrics:
     sum:
       value_type: int
       monotonic: true
-      aggregation_temporality: cumulative
+      aggregation_temporality: delta
     attributes: [status_code]
+  nginx.upstreams_response:
+    enabled: true
+    description: The total number of HTTP requests from upstream responses
+    unit: upstreams
+    sum:
+      value_type: int
+      monotonic: true
+      aggregation_temporality: delta
+    attributes: [responses]
