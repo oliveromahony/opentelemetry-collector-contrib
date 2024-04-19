@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-package nginxreceiver
+package stubstatus
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/receiver/nginxreceiver/internal/config"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
@@ -22,23 +23,24 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/pmetrictest"
 )
 
-func TestScraper(t *testing.T) {
+const testDataDir = "testdata"
+
+func TestStubStatusScraper(t *testing.T) {
 	nginxMock := newMockServer(t)
 	defer nginxMock.Close()
-
-	cfg := createDefaultConfig().(*Config)
+	cfg := config.CreateDefaultConfig().(*config.Config)
 	cfg.Endpoint = nginxMock.URL + "/status"
 	require.NoError(t, component.ValidateConfig(cfg))
 
-	scraper := newNginxScraper(receivertest.NewNopCreateSettings(), cfg)
+	stubStatusScraper := NewScraper(receivertest.NewNopCreateSettings(), cfg)
 
-	err := scraper.start(context.Background(), componenttest.NewNopHost())
+	err := stubStatusScraper.Start(context.Background(), componenttest.NewNopHost())
 	require.NoError(t, err)
 
-	actualMetrics, err := scraper.scrape(context.Background())
+	actualMetrics, err := stubStatusScraper.Scrape(context.Background())
 	require.NoError(t, err)
 
-	expectedFile := filepath.Join("testdata", "scraper", "expected.yaml")
+	expectedFile := filepath.Join(testDataDir, "expected.yaml")
 	expectedMetrics, err := golden.ReadMetrics(expectedFile)
 	require.NoError(t, err)
 
@@ -49,7 +51,7 @@ func TestScraper(t *testing.T) {
 		pmetrictest.IgnoreMetricsOrder()))
 }
 
-func TestScraperError(t *testing.T) {
+func TestStubStatusScraperError(t *testing.T) {
 	nginxMock := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if req.URL.Path == "/status" {
 			rw.WriteHeader(200)
@@ -59,33 +61,33 @@ func TestScraperError(t *testing.T) {
 		rw.WriteHeader(404)
 	}))
 	t.Run("404", func(t *testing.T) {
-		sc := newNginxScraper(receivertest.NewNopCreateSettings(), &Config{
+		sc := NewScraper(receivertest.NewNopCreateSettings(), &config.Config{
 			ClientConfig: confighttp.ClientConfig{
 				Endpoint: nginxMock.URL + "/badpath",
 			},
 		})
-		err := sc.start(context.Background(), componenttest.NewNopHost())
+		err := sc.Start(context.Background(), componenttest.NewNopHost())
 		require.NoError(t, err)
-		_, err = sc.scrape(context.Background())
+		_, err = sc.Scrape(context.Background())
 		require.Equal(t, errors.New("expected 200 response, got 404"), err)
 	})
 
 	t.Run("parse error", func(t *testing.T) {
-		sc := newNginxScraper(receivertest.NewNopCreateSettings(), &Config{
+		sc := NewScraper(receivertest.NewNopCreateSettings(), &config.Config{
 			ClientConfig: confighttp.ClientConfig{
 				Endpoint: nginxMock.URL + "/status",
 			},
 		})
-		err := sc.start(context.Background(), componenttest.NewNopHost())
+		err := sc.Start(context.Background(), componenttest.NewNopHost())
 		require.NoError(t, err)
-		_, err = sc.scrape(context.Background())
+		_, err = sc.Scrape(context.Background())
 		require.ErrorContains(t, err, "Bad status page")
 	})
 	nginxMock.Close()
 }
 
 func TestScraperFailedStart(t *testing.T) {
-	sc := newNginxScraper(receivertest.NewNopCreateSettings(), &Config{
+	sc := NewScraper(receivertest.NewNopCreateSettings(), &config.Config{
 		ClientConfig: confighttp.ClientConfig{
 			Endpoint: "localhost:8080",
 			TLSSetting: configtls.ClientConfig{
@@ -95,7 +97,7 @@ func TestScraperFailedStart(t *testing.T) {
 			},
 		},
 	})
-	err := sc.start(context.Background(), componenttest.NewNopHost())
+	err := sc.Start(context.Background(), componenttest.NewNopHost())
 	require.Error(t, err)
 }
 
