@@ -43,48 +43,48 @@ func NewScraper(
 	}
 }
 
-func (nls *NginxStubStatusScraper) ID() component.ID {
+func (s *NginxStubStatusScraper) ID() component.ID {
 	return component.NewID(metadata.Type)
 }
 
-func (r *nginxScraper) start(ctx context.Context, host component.Host) error {
-	httpClient, err := r.cfg.ToClient(ctx, host, r.settings)
+func (s *NginxStubStatusScraper) Start(ctx context.Context, host component.Host) error {
+	httpClient, err := s.cfg.ToClient(ctx, host, s.settings)
 	if err != nil {
 		return err
 	}
-	r.httpClient = httpClient
+	s.httpClient = httpClient
 
 	return nil
 }
 
-func (r *NginxStubStatusScraper) Shutdown(_ context.Context) error {
+func (s *NginxStubStatusScraper) Shutdown(_ context.Context) error {
 	return nil
 }
 
-func (r *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error) {
+func (s *NginxStubStatusScraper) Scrape(context.Context) (pmetric.Metrics, error) {
 	// Init client in scrape method in case there are transient errors in the constructor.
-	if r.client == nil {
+	if s.client == nil {
 		var err error
-		r.client, err = client.NewNginxClient(r.httpClient, r.cfg.ClientConfig.Endpoint)
+		s.client, err = client.NewNginxClient(s.httpClient, s.cfg.ClientConfig.Endpoint)
 		if err != nil {
-			r.client = nil
+			s.client = nil
 			return pmetric.Metrics{}, err
 		}
 	}
 
-	stats, err := r.client.GetStubStats()
+	stats, err := s.client.GetStubStats()
 	if err != nil {
-		r.settings.Logger.Error("fetch nginx stats", zap.Error(err))
+		s.settings.Logger.Error("fetch nginx stats", zap.Error(err))
 		return pmetric.Metrics{}, err
 	}
 
 	now := pcommon.NewTimestampFromTime(time.Now())
-	r.mb.RecordNginxRequestsDataPoint(now, stats.Requests)
-	r.mb.RecordNginxConnectionsAcceptedDataPoint(now, stats.Connections.Accepted)
-	r.mb.RecordNginxConnectionsHandledDataPoint(now, stats.Connections.Handled)
-	r.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Active, metadata.AttributeStateActive)
-	r.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Reading, metadata.AttributeStateReading)
-	r.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Writing, metadata.AttributeStateWriting)
-	r.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Waiting, metadata.AttributeStateWaiting)
-	return r.mb.Emit(), nil
+	s.mb.RecordNginxRequestsDataPoint(now, stats.Requests)
+	s.mb.RecordNginxConnectionsAcceptedDataPoint(now, stats.Connections.Accepted)
+	s.mb.RecordNginxConnectionsHandledDataPoint(now, stats.Connections.Handled)
+	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Active, metadata.AttributeStateActive)
+	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Reading, metadata.AttributeStateReading)
+	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Writing, metadata.AttributeStateWriting)
+	s.mb.RecordNginxConnectionsCurrentDataPoint(now, stats.Connections.Waiting, metadata.AttributeStateWaiting)
+	return s.mb.Emit(), nil
 }

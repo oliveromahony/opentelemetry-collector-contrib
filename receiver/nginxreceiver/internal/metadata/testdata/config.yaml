@@ -11,8 +11,6 @@ all_set:
       enabled: true
     nginx.requests:
       enabled: true
-    nginx.upstreams_response:
-      enabled: true
 none_set:
   metrics:
     nginx.connections_accepted:
@@ -24,6 +22,4 @@ none_set:
     nginx.http.status:
       enabled: false
     nginx.requests:
-      enabled: false
-    nginx.upstreams_response:
       enabled: false

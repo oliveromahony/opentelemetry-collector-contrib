@@ -18,12 +18,6 @@ attributes:
     - reading
     - writing
     - waiting
-  responses:
-    description: The total number of different response types
-    type: string
-    enum:
-    - failed
-    - buffered
   status_code:
     description: A status code range
     type: string
@@ -80,12 +74,3 @@ metrics:
       monotonic: true
       aggregation_temporality: delta
     attributes: [status_code]
-  nginx.upstreams_response:
-    enabled: true
-    description: The total number of HTTP requests from upstream responses
-    unit: upstreams
-    sum:
-      value_type: int
-      monotonic: true
-      aggregation_temporality: delta
-    attributes: [responses]

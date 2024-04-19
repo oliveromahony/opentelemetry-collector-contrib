@@ -44,11 +44,13 @@ func createMetricsReceiver(
 		scraperhelper.AddScraper(ns),
 	}
 
-	nals, err := accesslog.NewScraper(params, cfg)
-	if err != nil {
-		logger.Errorf("Failed to initialize NGINX Access Log scraper: %s", err.Error())
-	} else {
-		scraperOpts = append(scraperOpts, scraperhelper.AddScraper(nals))
+	if cfg.NginxConfigPath != "" {
+		nals, err := accesslog.NewScraper(params, cfg)
+		if err != nil {
+			logger.Errorf("Failed to initialize NGINX Access Log scraper: %s", err.Error())
+		} else {
+			scraperOpts = append(scraperOpts, scraperhelper.AddScraper(nals))
+		}
 	}
 
 	return scraperhelper.NewScraperControllerReceiver(

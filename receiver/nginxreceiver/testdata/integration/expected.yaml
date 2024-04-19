@@ -60,15 +60,6 @@ resourceMetrics:
                   timeUnixNano: "1643729289485220000"
               isMonotonic: true
             unit: requests
-          # - description: Total number of HTTP responses from upstreams since it started
-          #   name: nginx.upstreams_response
-          #   sum:
-          #     aggregationTemporality: 2
-          #     dataPoints:
-          #       - asInt: "2"
-          #         timeUnixNano: "1643729289485220000"
-          #     isMonotonic: true
-          #   unit: upstreams
         scope:
           name: otelcol/nginxreceiver
           version: latest
